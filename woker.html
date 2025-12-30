@@ -1,0 +1,1504 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>报修系统-工人端</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="common.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* 全局样式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* 头部样式 */
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #4a6491);
+            color: white;
+            padding: 1.2rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        #worker-name {
+            font-weight: 600;
+            color: #ffd166;
+        }
+
+        .logout-btn {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 0.5rem 1.2rem;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s;
+        }
+
+        .logout-btn:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* 主体内容布局 */
+        .main-content {
+            display: flex;
+            flex: 1;
+            padding: 1.5rem;
+            gap: 1.5rem;
+        }
+
+        /* 侧边栏样式 */
+        .sidebar {
+            flex: 0 0 250px;
+            background-color: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .nav-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .nav-btn {
+            background-color: #f8f9fa;
+            border: none;
+            border-radius: 8px;
+            padding: 1rem 1.2rem;
+            text-align: left;
+            font-size: 1rem;
+            color: #555;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .nav-btn:hover {
+            background-color: #e9ecef;
+            transform: translateX(5px);
+        }
+
+        .nav-btn.active {
+            background-color: #3498db;
+            color: white;
+            box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+        }
+
+        .nav-btn i {
+            margin-right: 0.8rem;
+            font-size: 1.1rem;
+        }
+
+        .badge {
+            background-color: #e74c3c;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .nav-btn.active .badge {
+            background-color: white;
+            color: #3498db;
+        }
+
+        .worker-status {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #eee;
+        }
+
+        .worker-status p {
+            color: #666;
+            font-size: 0.95rem;
+        }
+
+        #today-orders {
+            font-weight: bold;
+            color: #3498db;
+        }
+
+        /* 内容区域样式 */
+        .content-area {
+            flex: 1;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            padding: 2rem;
+            overflow-y: auto;
+        }
+
+        .content-section {
+            display: none;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        .section-header {
+            margin-bottom: 2rem;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 1rem;
+        }
+
+        .section-header h2 {
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .section-header p {
+            color: #7f8c8d;
+            font-size: 0.95rem;
+        }
+
+        /* 分类筛选样式 */
+        .category-filter {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+            margin-bottom: 2rem;
+        }
+
+        .filter-btn {
+            padding: 0.6rem 1.2rem;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: #555;
+        }
+
+        .filter-btn:hover {
+            background-color: #e9ecef;
+        }
+
+        .filter-btn.active {
+            background-color: #3498db;
+            color: white;
+            border-color: #3498db;
+        }
+
+        /* 订单容器样式 */
+        .orders-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+        }
+
+        .order-card {
+            border: 1px solid #eaeaea;
+            border-radius: 10px;
+            padding: 1.5rem;
+            transition: all 0.3s;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .order-card:hover {
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            transform: translateY(-3px);
+        }
+
+        .order-info {
+            flex: 1;
+        }
+
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.8rem;
+        }
+
+        .order-id {
+            font-weight: bold;
+            color: #2c3e50;
+            font-size: 1.1rem;
+        }
+
+        .order-status {
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .status-unclaimed {
+            background-color: #ffeaa7;
+            color: #e17055;
+        }
+
+        .status-active {
+            background-color: #a29bfe;
+            color: white;
+        }
+
+        .status-completed {
+            background-color: #55efc4;
+            color: #00b894;
+        }
+
+        .status-cancelled {
+            background-color: #fd79a8;
+            color: #e84393;
+        }
+
+        .order-type {
+            display: inline-block;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin-bottom: 0.8rem;
+            font-weight: 600;
+        }
+
+        .type-carpentry {
+            background-color: #fdcb6e;
+            color: #e17055;
+        }
+
+        .type-metalwork {
+            background-color: #74b9ff;
+            color: #0984e3;
+        }
+
+        .type-plumbing {
+            background-color: #81ecec;
+            color: #00cec9;
+        }
+
+        .type-electric {
+            background-color: #a29bfe;
+            color: #6c5ce7;
+        }
+
+        .type-network {
+            background-color: #a8e6cf;
+            color: #2d8a5f;
+        }
+
+        .type-other {
+            background-color: #dfe6e9;
+            color: #636e72;
+        }
+
+        .order-details p {
+            margin-bottom: 0.5rem;
+            color: #555;
+            font-size: 0.95rem;
+        }
+
+        .order-details strong {
+            color: #2c3e50;
+            margin-right: 0.5rem;
+        }
+
+        .order-time {
+            color: #7f8c8d;
+            font-size: 0.85rem;
+            margin-top: 0.8rem;
+        }
+
+        .order-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .btn {
+            padding: 0.7rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .accept-btn {
+            background-color: #2ecc71;
+            color: white;
+        }
+
+        .accept-btn:hover {
+            background-color: #27ae60;
+        }
+
+        .complete-btn {
+            background-color: #3498db;
+            color: white;
+        }
+
+        .complete-btn:hover {
+            background-color: #2980b9;
+        }
+
+        .details-btn {
+            background-color: #f8f9fa;
+            color: #555;
+            border: 1px solid #dee2e6;
+        }
+
+        .details-btn:hover {
+            background-color: #e9ecef;
+        }
+
+        /* 历史订单筛选样式 */
+        .history-filters {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .history-filters select, 
+        .history-filters input {
+            padding: 0.7rem 1rem;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background-color: white;
+            font-size: 0.95rem;
+        }
+
+        .history-filters input {
+            flex: 1;
+        }
+
+        /* 个人信息样式 */
+        .profile-container {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid #eee;
+        }
+
+        .profile-avatar {
+            font-size: 4rem;
+            color: #3498db;
+        }
+
+        .profile-name {
+            font-size: 1.8rem;
+            color: #2c3e50;
+            margin-bottom: 0.3rem;
+        }
+
+        .worker-id {
+            color: #7f8c8d;
+            font-size: 0.95rem;
+        }
+
+        .edit-profile-btn {
+            margin-left: auto;
+            background-color: #f8f9fa;
+            color: #555;
+            border: 1px solid #dee2e6;
+            padding: 0.7rem 1.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s;
+        }
+
+        .edit-profile-btn:hover {
+            background-color: #e9ecef;
+        }
+
+        .profile-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #f5f5f5;
+        }
+
+        .detail-label {
+            color: #7f8c8d;
+            font-weight: 500;
+        }
+
+        .detail-value {
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .profile-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .stat-card {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        .stat-card h3 {
+            color: #7f8c8d;
+            font-size: 1rem;
+            margin-bottom: 0.8rem;
+        }
+
+        .stat-number {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #3498db;
+            margin-bottom: 0.3rem;
+        }
+
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+
+        /* 模态框样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            font-size: 1.8rem;
+            cursor: pointer;
+            color: #7f8c8d;
+        }
+
+        .modal-content h3 {
+            margin-bottom: 1rem;
+            color: #2c3e50;
+        }
+
+        .order-summary {
+            background-color: #f8f9fa;
+            padding: 1.2rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+        }
+
+        .order-summary p {
+            margin-bottom: 0.5rem;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .cancel-btn {
+            background-color: #f8f9fa;
+            color: #555;
+            border: 1px solid #dee2e6;
+        }
+
+        .cancel-btn:hover {
+            background-color: #e9ecef;
+        }
+
+        /* 通知样式 */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #2ecc71;
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            z-index: 2000;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .notification.error {
+            background-color: #e74c3c;
+        }
+
+        /* 加载状态样式 */
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: #7f8c8d;
+        }
+
+        .loading i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: #3498db;
+        }
+
+        .no-orders {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: #7f8c8d;
+        }
+        
+        .no-orders i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            color: #bdc3c7;
+        }
+        
+        .no-orders p {
+            font-size: 1.1rem;
+        }
+
+        /* 页脚样式 */
+        .footer {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 1.2rem 2rem;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 992px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                flex: none;
+                width: 100%;
+            }
+            
+            .nav-menu {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+            
+            .nav-btn {
+                flex: 1;
+                min-width: 150px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+            
+            .user-info {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .category-filter {
+                justify-content: center;
+            }
+            
+            .order-card {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .order-actions {
+                flex-direction: row;
+                width: 100%;
+            }
+            
+            .btn {
+                flex: 1;
+            }
+            
+            .profile-details {
+                grid-template-columns: 1fr;
+            }
+            
+            .profile-stats {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            }
+        }
+
+        /* 动画样式 */
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1><i class="fas fa-tools"></i> 宿舍报修系统 - 工人端</h1>
+            <div class="user-info">
+                <span>欢迎，<span id="worker-name">加载中...</span></span>
+                <button id="logout-btn" class="logout-btn"><i class="fas fa-sign-out-alt"></i> 退出</button>
+            </div>
+        </header>
+        
+        <div class="main-content">
+            <!-- 左侧导航栏 -->
+            <aside class="sidebar">
+                <nav class="nav-menu">
+                    <button class="nav-btn active" data-target="unclaimed-orders">
+                        <i class="fas fa-list"></i> 未接订单
+                        <span class="badge" id="unclaimed-count">0</span>
+                    </button>
+                    <button class="nav-btn" data-target="active-orders">
+                        <i class="fas fa-wrench"></i> 已接待维修订单
+                        <span class="badge" id="active-count">0</span>
+                    </button>
+                    <button class="nav-btn" data-target="history-orders">
+                        <i class="fas fa-history"></i> 历史订单
+                    </button>
+                    <button class="nav-btn" data-target="profile">
+                        <i class="fas fa-user"></i> 个人信息
+                    </button>
+                </nav>
+                
+                <div class="worker-status">
+                    <p>今日接单：<span id="today-orders">0</span> 单</p>
+                </div>
+            </aside>
+            
+            <!-- 右侧内容区域 -->
+            <main class="content-area">
+                <!-- 未接订单 -->
+                <section id="unclaimed-orders" class="content-section active">
+                    <div class="section-header">
+                        <h2><i class="fas fa-list"></i> 未接订单</h2>
+                        <p>所有报修了但还没有被工人接的订单</p>
+                    </div>
+                    
+                    <div class="category-filter">
+                        <button class="filter-btn active" data-category="all">全部</button>
+                        <button class="filter-btn" data-category="carpentry">木工</button>
+                        <button class="filter-btn" data-category="metalwork">金工</button>
+                        <button class="filter-btn" data-category="plumbing">水工</button>
+                        <button class="filter-btn" data-category="electric">电工</button>
+                        <button class="filter-btn" data-category="network">网络</button>
+                        <button class="filter-btn" data-category="other">其他</button>
+                    </div>
+                    
+                    <div class="orders-container" id="unclaimed-orders-list">
+                        <div class="loading">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>正在加载未接订单...</p>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- 已接待维修订单 -->
+                <section id="active-orders" class="content-section">
+                    <div class="section-header">
+                        <h2><i class="fas fa-wrench"></i> 已接待维修订单</h2>
+                        <p>您已选择维修但还没有完成的订单</p>
+                    </div>
+                    
+                    <div class="orders-container" id="active-orders-list">
+                        <div class="loading">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>正在加载已接订单...</p>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- 历史订单 -->
+                <section id="history-orders" class="content-section">
+                    <div class="section-header">
+                        <h2><i class="fas fa-history"></i> 历史订单</h2>
+                        <p>您接过的所有订单记录</p>
+                    </div>
+                    
+                    <div class="history-filters">
+                        <select id="history-filter">
+                            <option value="all">全部订单</option>
+                            <option value="completed">已完成</option>
+                            <option value="pending">待维修</option>
+                            <option value="cancelled">已取消</option>
+                        </select>
+                    </div>
+                    
+                    <div class="orders-container" id="history-orders-list">
+                        <div class="loading">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>正在加载历史订单...</p>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- 个人信息 -->
+                <section id="profile" class="content-section">
+                    <div class="section-header">
+                        <h2><i class="fas fa-user"></i> 个人信息</h2>
+                        <p>查看和更新您的个人信息</p>
+                    </div>
+                    
+                    <div class="profile-container">
+                        <div class="profile-header">
+                            <div class="profile-avatar">
+                                <i class="fas fa-user-circle"></i>
+                            </div>
+                            <div class="profile-name">
+                                <h3 id="profile-worker-name">加载中...</h3>
+                                <span class="worker-id">工号: <span id="profile-worker-id">加载中...</span></span>
+                            </div>
+                            <button class="edit-profile-btn"><i class="fas fa-edit"></i> 编辑信息</button>
+                        </div>
+                        
+                        <div class="profile-details">
+                            <div class="detail-item">
+                                <span class="detail-label">姓名</span>
+                                <span class="detail-value" id="detail-name">加载中...</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">工号</span>
+                                <span class="detail-value" id="detail-worker-id">加载中...</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">电话号码</span>
+                                <span class="detail-value" id="detail-phone">加载中...</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">工种</span>
+                                <span class="detail-value" id="detail-specialty">加载中...</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">入职日期</span>
+                                <span class="detail-value" id="detail-join-date">加载中...</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">本月接单数</span>
+                                <span class="detail-value" id="detail-month-orders">0</span>
+                            </div>
+                        </div>
+                        
+                        <div class="profile-stats">
+                            <div class="stat-card">
+                                <h3>本月完成</h3>
+                                <p class="stat-number" id="detail-month-completed">0</p>
+                                <p class="stat-label">订单</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+        
+        <footer class="footer">
+            <p>宿舍报修系统 &copy; 2025 - 工人端 v1.0</p>
+        </footer>
+    </div>
+    
+    <!-- 模态框 - 接单确认 -->
+    <div id="accept-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h3>确认接单</h3>
+            <p>您确定要接这个维修订单吗？</p>
+            <div class="order-summary">
+                <p><strong>订单号：</strong><span id="modal-order-id">#00123</span></p>
+                <p><strong>报修类型：</strong><span id="modal-order-type">加载中...</span></p>
+                <p><strong>生活区：</strong><span id="modal-order-livingarea">加载中...</span></p>
+                <p><strong>宿舍楼：</strong><span id="modal-order-building">加载中...</span></p>
+                <p><strong>房间号：</strong><span id="modal-order-room">加载中...</span></p>
+                <p><strong>报修描述：</strong><span id="modal-order-desc">加载中...</span></p>
+            </div>
+            <div class="modal-actions">
+                <button class="btn cancel-btn">取消</button>
+                <button class="btn confirm-btn">确认接单</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 模态框 - 完成订单确认 -->
+    <div id="complete-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h3>确认完成</h3>
+            <p>您确定要标记这个订单为已完成吗？</p>
+            <div class="order-summary">
+                <p><strong>订单号：</strong><span id="complete-modal-order-id">#00123</span></p>
+                <p><strong>报修类型：</strong><span id="complete-modal-order-type">加载中...</span></p>
+            </div>
+            <div class="modal-actions">
+                <button class="btn cancel-btn">取消</button>
+                <button class="btn confirm-btn">确认完成</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== 全局变量和配置 ====================
+        const API_BASE_URL = 'http://localhost:8080'; // 后端API基础路径
+        let currentWorker = null;
+        let selectedOrderId = null;
+
+        // ==================== 字段映射函数 ====================
+        function mapOrderFields(order) {
+            return {
+                id: order.order_id,
+                type: order.repair_category,
+                livingarea: order.living_area,
+                building: order.building,
+                room: order.room_number,
+                description: order.problem_description,
+                studentName: order.reporter_name,
+                studentPhone: order.reporter_phone,
+                time: order.repair_time,
+                images: order.repair_images ? order.repair_images.split(',') : [],
+                isAccepted: order.is_accepted,
+                isCompleted: order.is_completed,
+                workerId: order.worker_id,
+                acceptedTime: order.accepted_time,
+                completedTime: order.completed_time
+            };
+        }
+
+        function getTypeText(type) {
+            const typeMap = {
+                'carpentry': '木工',
+                'metalwork': '金工',
+                'plumbing': '水工',
+                'electric': '电工',
+                'network': '网络',
+                'other': '其他'
+            };
+            return typeMap[type] || type || '未知';
+        }
+
+        function formatDateTime(dateTimeStr) {
+            if (!dateTimeStr) return '';
+            try {
+                const date = new Date(dateTimeStr);
+                return date.toLocaleString('zh-CN');
+            } catch (e) {
+                return dateTimeStr;
+            }
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            try {
+                const date = new Date(dateStr);
+                return date.toLocaleDateString('zh-CN');
+            } catch (e) {
+                return dateStr;
+            }
+        }
+
+        // ==================== 工具函数 ====================
+        function showNotification(message, type = 'success') {
+            // 移除已有的通知
+            const existingNotification = document.querySelector('.notification');
+            if (existingNotification) {
+                existingNotification.remove();
+            }
+
+            // 创建通知元素
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+                <span>${message}</span>
+            `;
+            
+            // 添加到页面
+            document.body.appendChild(notification);
+            
+            // 3秒后移除通知
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease-out forwards';
+                setTimeout(() => {
+                    notification.remove();
+                }, 300);
+            }, 3000);
+        }
+
+        // ==================== 页面初始化 ====================
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('页面加载完成');
+        console.log('当前 token:', Common.getToken());
+        console.log('API 基础 URL:', Common.CONFIG.API_BASE_URL);
+        
+        // 检查登录状态
+        Common.checkLoginStatus().then(isLoggedIn => {
+            if (!isLoggedIn) {
+                console.log('未登录，跳转到登录页');
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            // 已登录，初始化页面
+            console.log('登录状态有效，初始化页面...');
+            initWorkerInfo();
+            initEventListeners();
+            setupLogoutButton();
+            loadAllData();
+        });
+    });
+
+        // ==================== 初始化工人信息 ====================
+        async function initWorkerInfo() {
+            try {
+                const response = await Common.request.get('/worker/profile');
+                if (response.data.code === 1) {
+                    currentWorker = response.data.data;
+                    updateWorkerInfoUI(currentWorker);
+                } else {
+                    // 获取信息失败，可能 token 有问题
+                    console.error('获取工人信息失败:', response.data.msg);
+                    Common.handleLogout();
+                }
+            } catch (error) {
+                console.error('获取工人信息失败:', error);
+                // 这里不自动退出，可能只是网络问题
+            }
+        }
+
+        function updateWorkerInfo(worker) {
+            if (!worker) return;
+            
+            document.getElementById('worker-name').textContent = worker.name;
+            document.getElementById('profile-worker-name').textContent = worker.name;
+            document.getElementById('detail-name').textContent = worker.name;
+            
+            document.getElementById('profile-worker-id').textContent = worker.workerCode;
+            document.getElementById('detail-worker-id').textContent = worker.workerCode;
+            
+            document.getElementById('detail-phone').textContent = worker.phone || '未设置';
+            document.getElementById('detail-specialty').textContent = worker.workType || '未设置';
+            document.getElementById('detail-join-date').textContent = worker.hireDate ? formatDate(worker.hireDate) : '未设置';
+        }
+
+        // ==================== 退出登录 ====================
+        async function handleLogout() {
+            if (confirm('确定要退出登录吗？')) {
+                try {
+                    // 调用后端退出接口
+                    await Common.request.post(`/worker/logout`);
+
+                } catch (error) {
+                    console.error('退出请求失败:', error);
+                } finally {
+                    Common.handleLogout();
+                }
+            }
+        }
+
+        function setupLogoutButton() {
+            const logoutBtn = document.getElementById('logout-btn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', handleLogout);
+            }
+        }
+
+        // ==================== 事件监听器初始化 ====================
+        function initEventListeners() {
+            // 导航按钮点击事件
+            document.querySelectorAll('.nav-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const targetId = this.getAttribute('data-target');
+                    
+                    // 更新活动按钮
+                    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // 显示对应内容区域
+                    document.querySelectorAll('.content-section').forEach(section => {
+                        section.classList.remove('active');
+                        if (section.id === targetId) {
+                            section.classList.add('active');
+                            // 加载对应数据
+                            loadSectionData(targetId);
+                        }
+                    });
+                });
+            });
+            
+            // 分类筛选按钮点击事件
+            document.querySelectorAll('.filter-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const category = this.getAttribute('data-category');
+                    
+                    // 更新活动按钮
+                    document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // 加载对应类别的订单
+                    fetchPendingOrders(category === 'all' ? '' : category);
+                });
+            });
+            
+            // 历史订单筛选事件
+            const historyFilter = document.getElementById('history-filter');
+            if (historyFilter) {
+                historyFilter.addEventListener('change', function() {
+                    fetchOrderHistory(this.value);
+                });
+            }
+            
+            // 模态框关闭按钮事件
+            document.querySelectorAll('.close-modal, .cancel-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    document.getElementById('accept-modal').style.display = 'none';
+                    document.getElementById('complete-modal').style.display = 'none';
+                });
+            });
+            
+            // 点击模态框外部关闭模态框
+            window.addEventListener('click', function(event) {
+                if (event.target === document.getElementById('accept-modal')) {
+                    document.getElementById('accept-modal').style.display = 'none';
+                }
+                if (event.target === document.getElementById('complete-modal')) {
+                    document.getElementById('complete-modal').style.display = 'none';
+                }
+            });
+        }
+
+        // ==================== 数据加载函数 ====================
+        function loadAllData() {
+            fetchPendingOrders();
+            fetchWorkerStats();
+        }
+
+        function loadSectionData(section) {
+            switch(section) {
+                case 'unclaimed-orders':
+                    fetchPendingOrders();
+                    break;
+                case 'active-orders':
+                    fetchAcceptedOrders();
+                    break;
+                case 'history-orders':
+                    fetchOrderHistory('all');
+                    break;
+                case 'profile':
+                    fetchWorkerProfile();
+                    break;
+            }
+        }
+
+        // ==================== API调用函数 ====================
+        async function fetchPendingOrders(workType = '') {
+            const container = document.getElementById('unclaimed-orders-list');
+            container.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i><p>正在加载未接订单...</p></div>';
+            
+            try {
+                let url = `/api/worker/orders/pending`;
+                if (workType) {
+                    url += `?workType=${workType}`;
+                }
+                
+                const response = await Common.request.get(url);
+                
+                if (response.data.code === 1) {
+                    renderOrders(response.data.data, 'unclaimed');
+                    updateBadgeCounts(response.data.data.length, 'unclaimed');
+                } else {
+                    container.innerHTML = '<div class="no-orders"><i class="fas fa-inbox"></i><p>暂无未接订单</p></div>';
+                    showNotification(response.data.msg || '获取未接订单失败', 'error');
+                }
+            } catch (error) {
+                console.error('获取未接订单失败:', error);
+                container.innerHTML = '<div class="no-orders"><i class="fas fa-exclamation-circle"></i><p>加载失败，请刷新重试</p></div>';
+                showNotification('网络错误，请稍后重试', 'error');
+            }
+        }
+
+        async function fetchAcceptedOrders() {
+            const container = document.getElementById('active-orders-list');
+            container.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i><p>正在加载已接订单...</p></div>';
+            
+            try {
+                const response = await Common.request.get(`/api/worker/orders/accepted`, {
+                    withCredentials: true
+                });
+                
+                if (response.data.code === 1) {
+                    renderOrders(response.data.data, 'active');
+                    updateBadgeCounts(response.data.data.length, 'active');
+                } else {
+                    container.innerHTML = '<div class="no-orders"><i class="fas fa-inbox"></i><p>暂无已接订单</p></div>';
+                }
+            } catch (error) {
+                console.error('获取已接订单失败:', error);
+                container.innerHTML = '<div class="no-orders"><i class="fas fa-exclamation-circle"></i><p>加载失败，请刷新重试</p></div>';
+            }
+        }
+
+        async function fetchOrderHistory(status = 'all') {
+            const container = document.getElementById('history-orders-list');
+            container.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i><p>正在加载历史订单...</p></div>';
+            
+            try {
+                const response = await Common.request.get(`/api/worker/orders/history?status=${status}`);
+                
+                if (response.data.code === 1) {
+                    renderOrders(response.data.data, 'history');
+                } else {
+                    container.innerHTML = '<div class="no-orders"><i class="fas fa-inbox"></i><p>暂无历史订单</p></div>';
+                }
+            } catch (error) {
+                console.error('获取历史订单失败:', error);
+                container.innerHTML = '<div class="no-orders"><i class="fas fa-exclamation-circle"></i><p>加载失败，请刷新重试</p></div>';
+            }
+        }
+
+        async function fetchWorkerStats() {
+            try {
+                const response = await Common.request.get(`/api/worker/orders/stats`);
+                
+                if (response.data.code === 1) {
+                    const stats = response.data.data;
+                    if (stats.todayOrders !== undefined) {
+                        document.getElementById('today-orders').textContent = stats.todayOrders;
+                    }
+                    if (stats.monthCompleted !== undefined) {
+                        document.getElementById('detail-month-completed').textContent = stats.monthCompleted;
+                    }
+                    if (stats.monthlyOrders !== undefined) {
+                        document.getElementById('detail-month-orders').textContent = stats.monthlyOrders;
+                    }
+                }
+            } catch (error) {
+                console.error('获取统计数据失败:', error);
+            }
+        }
+
+        async function fetchWorkerProfile() {
+            try {
+                const response = await Common.request.get(`/worker/profile`);
+                
+                if (response.data.code === 1) {
+                    initWorkerInfo(response.data.data);
+                }
+            } catch (error) {
+                console.error('获取个人信息失败:', error);
+            }
+        }
+
+        async function acceptOrder(orderId) {
+            try {
+                const response = await Common.request.post(`/api/worker/orders/${orderId}/accept`);
+                
+                if (response.data.code === 1) {
+                    showNotification('接单成功', 'success');
+                    // 刷新订单列表
+                    fetchPendingOrders();
+                    fetchAcceptedOrders();
+                    fetchWorkerStats();
+                } else {
+                    showNotification(response.data.msg || '接单失败', 'error');
+                }
+            } catch (error) {
+                console.error('接单失败:', error);
+                showNotification('网络错误，请稍后重试', 'error');
+            }
+        }
+
+        async function completeOrder(orderId) {
+            try {
+                const response = await Common.request.post(`/api/worker/orders/${orderId}/complete`);
+                
+                if (response.data.code === 1) {
+                    showNotification('订单完成', 'success');
+                    // 刷新订单列表
+                    fetchAcceptedOrders();
+                    fetchOrderHistory();
+                    fetchWorkerStats();
+                } else {
+                    showNotification(response.data.msg || '完成订单失败', 'error');
+                }
+            } catch (error) {
+                console.error('完成订单失败:', error);
+                showNotification('网络错误，请稍后重试', 'error');
+            }
+        }
+
+        // ==================== 渲染函数 ====================
+        function updateBadgeCounts(count, type) {
+            if (type === 'unclaimed') {
+                document.getElementById('unclaimed-count').textContent = count || 0;
+            } else if (type === 'active') {
+                document.getElementById('active-count').textContent = count || 0;
+            }
+        }
+
+        function renderOrders(orders, section) {
+            const container = getContainerBySection(section);
+            if (!container) return;
+            
+            if (!orders || orders.length === 0) {
+                container.innerHTML = '<div class="no-orders"><i class="fas fa-inbox"></i><p>暂无订单</p></div>';
+                return;
+            }
+            
+            container.innerHTML = '';
+            
+            orders.forEach(order => {
+                const mappedOrder = mapOrderFields(order);
+                const orderElement = createOrderElement(mappedOrder, section);
+                container.appendChild(orderElement);
+            });
+        }
+
+        function getContainerBySection(section) {
+            switch(section) {
+                case 'unclaimed': return document.getElementById('unclaimed-orders-list');
+                case 'active': return document.getElementById('active-orders-list');
+                case 'history': return document.getElementById('history-orders-list');
+                default: return null;
+            }
+        }
+
+        function createOrderElement(order, section) {
+            const orderCard = document.createElement('div');
+            orderCard.className = 'order-card';
+            
+            const typeClass = `type-${order.type}`;
+            const typeText = getTypeText(order.type);
+            
+            let statusText = '';
+            let statusClass = '';
+            
+            if (section === 'unclaimed') {
+                statusText = '未接单';
+                statusClass = 'status-unclaimed';
+            } else if (section === 'active') {
+                statusText = '维修中';
+                statusClass = 'status-active';
+            } else if (section === 'history') {
+                if (order.isCompleted === 1) {
+                    statusText = '已完成';
+                    statusClass = 'status-completed';
+                } else if (order.isAccepted === 0) {
+                    statusText = '未接单';
+                    statusClass = 'status-unclaimed';
+                } else {
+                    statusText = '维修中';
+                    statusClass = 'status-active';
+                }
+            }
+            
+            orderCard.innerHTML = `
+                <div class="order-info">
+                    <div class="order-header">
+                        <div class="order-id">${order.id}</div>
+                        <div class="order-status ${statusClass}">${statusText}</div>
+                    </div>
+                    <div class="order-type ${typeClass}">${typeText}</div>
+                    <div class="order-details">
+                        <p><strong>生活区：</strong>${order.livingarea}</p>
+                        <p><strong>宿舍楼：</strong>${order.building}</p>
+                        <p><strong>房间号：</strong>${order.room}</p>
+                        <p><strong>报修描述：</strong>${order.description}</p>
+                        <p><strong>报修人：</strong>${order.studentName} (${order.studentPhone})</p>
+                    </div>
+                    <div class="order-time">报修时间：${formatDateTime(order.time)}</div>
+                </div>
+                <div class="order-actions">
+                    ${section === 'unclaimed' ? 
+                        `<button class="btn accept-btn" data-order-id="${order.id}">
+                            <i class="fas fa-check-circle"></i> 接单
+                        </button>` : ''}
+                    ${section === 'active' ? 
+                        `<button class="btn complete-btn" data-order-id="${order.id}">
+                            <i class="fas fa-flag-checkered"></i> 完成
+                        </button>` : ''}
+                    <button class="btn details-btn" data-order-id="${order.id}">
+                        <i class="fas fa-info-circle"></i> 详情
+                    </button>
+                </div>
+            `;
+            
+            // 添加事件监听
+            if (section === 'unclaimed') {
+                const acceptBtn = orderCard.querySelector('.accept-btn');
+                acceptBtn.addEventListener('click', function() {
+                    selectedOrderId = this.getAttribute('data-order-id');
+                    showAcceptModal(order);
+                });
+            } else if (section === 'active') {
+                const completeBtn = orderCard.querySelector('.complete-btn');
+                completeBtn.addEventListener('click', function() {
+                    selectedOrderId = this.getAttribute('data-order-id');
+                    showCompleteModal(order);
+                });
+            }
+            
+            // 详情按钮事件
+            const detailsBtn = orderCard.querySelector('.details-btn');
+            detailsBtn.addEventListener('click', function() {
+                showOrderDetails(order, section);
+            });
+            
+            return orderCard;
+        }
+
+        // ==================== 模态框函数 ====================
+        function showAcceptModal(order) {
+            document.getElementById('modal-order-id').textContent = order.id;
+            document.getElementById('modal-order-type').textContent = getTypeText(order.type);
+            document.getElementById('modal-order-livingarea').textContent = order.livingarea;
+            document.getElementById('modal-order-building').textContent = order.building;
+            document.getElementById('modal-order-room').textContent = order.room;
+            document.getElementById('modal-order-desc').textContent = order.description;
+            
+            const confirmBtn = document.querySelector('#accept-modal .confirm-btn');
+            confirmBtn.onclick = function() {
+                acceptOrder(selectedOrderId);
+                document.getElementById('accept-modal').style.display = 'none';
+            };
+            
+            document.getElementById('accept-modal').style.display = 'flex';
+        }
+
+        function showCompleteModal(order) {
+            document.getElementById('complete-modal-order-id').textContent = order.id;
+            document.getElementById('complete-modal-order-type').textContent = getTypeText(order.type);
+            
+            const confirmBtn = document.querySelector('#complete-modal .confirm-btn');
+            confirmBtn.onclick = function() {
+                completeOrder(selectedOrderId);
+                document.getElementById('complete-modal').style.display = 'none';
+            };
+            
+            document.getElementById('complete-modal').style.display = 'flex';
+        }
+
+        function showOrderDetails(order, section) {
+            let detailsText = `订单号：${order.id}\n`;
+            detailsText += `报修类型：${getTypeText(order.type)}\n`;
+            detailsText += `生活区：${order.livingarea}\n`;
+            detailsText += `宿舍楼：${order.building}\n`;
+            detailsText += `房间号：${order.room}\n`;
+            detailsText += `报修描述：${order.description}\n`;
+            detailsText += `报修人：${order.studentName}\n`;
+            detailsText += `联系电话：${order.studentPhone}\n`;
+            detailsText += `报修时间：${formatDateTime(order.time)}\n`;
+            
+            if (section === 'active' && order.acceptedTime) {
+                detailsText += `接单时间：${formatDateTime(order.acceptedTime)}\n`;
+            }
+            
+            if (section === 'history' && order.completedTime) {
+                detailsText += `完成时间：${formatDateTime(order.completedTime)}\n`;
+            }
+            
+            alert(detailsText);
+        }
+    </script>
+</body>
+</html>

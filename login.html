@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>宿舍报修系统 - 工人登录</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="common.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #2c3e50, #4a6491);
+            color: #333;
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1.5rem;
+        }
+
+        .login-container {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 登录框 */
+        .login-box {
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .logo i {
+            font-size: 3rem;
+            color: #3498db;
+        }
+
+        .logo h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .login-subtitle {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        /* 表单样式 */
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-group label {
+            color: #2c3e50;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .input-with-icon {
+            position: relative;
+        }
+
+        .input-with-icon input {
+            width: 100%;
+            padding: 1rem 1rem 1rem 3rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s;
+            background-color: #f8f9fa;
+        }
+
+        .input-with-icon input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+            background-color: white;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #7f8c8d;
+            font-size: 1.1rem;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #7f8c8d;
+            cursor: pointer;
+            font-size: 1.1rem;
+        }
+
+        .toggle-password:hover {
+            color: #3498db;
+        }
+
+
+        /* 登录按钮 */
+        .login-btn {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 1.2rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.8rem;
+            margin-top: 1rem;
+        }
+
+        .login-btn:hover {
+            background: linear-gradient(135deg, #2980b9, #1c6ea4);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        .login-btn:active {
+            transform: translateY(0);
+        }
+
+        /* 登录页脚 */
+        .login-footer {
+            margin-top: 2rem;
+            text-align: center;
+            padding-top: 1.5rem;
+            border-top: 1px solid #eee;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        /* 模态框样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 2.5rem;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            animation: modalAppear 0.3s ease-out;
+        }
+
+        @keyframes modalAppear {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .success-icon, .error-icon {
+            font-size: 4rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .success-icon {
+            color: #2ecc71;
+        }
+
+        .error-icon {
+            color: #e74c3c;
+        }
+
+        .modal-content h3 {
+            color: #2c3e50;
+            margin-bottom: 1rem;
+        }
+
+        .modal-content p {
+            color: #7f8c8d;
+            margin-bottom: 1.5rem;
+        }
+
+        .loader {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            margin: 1rem auto;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .btn {
+            padding: 0.8rem 2rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            font-size: 1rem;
+        }
+
+        .confirm-btn {
+            background-color: #3498db;
+            color: white;
+        }
+
+        .confirm-btn:hover {
+            background-color: #2980b9;
+        }
+
+        /* 错误动画 */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 600px) {
+            body {
+                padding: 1rem;
+            }
+            
+            .login-box {
+                padding: 1.5rem;
+            }
+            
+            .logo {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .logo h1 {
+                font-size: 1.8rem;
+            }
+            
+            .logo i {
+                font-size: 2.5rem;
+            }
+            
+            .login-subtitle {
+                font-size: 1rem;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .login-box {
+                padding: 1.2rem;
+            }
+            
+            .logo h1 {
+                font-size: 1.6rem;
+            }
+            
+            .logo i {
+                font-size: 2rem;
+            }
+            
+            .input-with-icon input {
+                padding: 0.8rem 0.8rem 0.8rem 2.5rem;
+            }
+            
+            .login-btn {
+                padding: 1rem;
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-box">
+            <div class="login-header">
+                <div class="logo">
+                    <i class="fas fa-tools"></i>
+                    <h1>宿舍报修系统</h1>
+                </div>
+                <p class="login-subtitle">维修工人登录</p>
+            </div>
+            
+            <form id="login-form" class="login-form">
+                <div class="form-group">
+                    <label for="worker-code">
+                        <i class="fas fa-id-badge"></i> 工号
+                    </label>
+                    <div class="input-with-icon">
+                        <input type="text" id="worker-code" name="worker-code" placeholder="请输入您的工号" required>
+                        <i class="fas fa-user input-icon"></i>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">
+                        <i class="fas fa-lock"></i> 密码
+                    </label>
+                    <div class="input-with-icon">
+                        <input type="password" id="password" name="password" placeholder="请输入密码" required>
+                        <i class="fas fa-key input-icon"></i>
+                        <button type="button" class="toggle-password" id="toggle-password">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <button type="submit" class="login-btn">
+                    <i class="fas fa-sign-in-alt"></i> 登录系统
+                </button>
+            </form>
+            
+            <div class="login-footer">
+                <p>宿舍报修系统 &copy; 2025 - 维修工人端</p>
+                <p>技术支持：校园后勤服务中心</p>
+            </div>
+        </div>
+        
+    </div>
+    
+    <!-- 登录成功提示 -->
+    <div id="success-modal" class="modal">
+        <div class="modal-content">
+            <div class="success-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h3>登录成功！</h3>
+            <p>正在跳转到维修系统...</p>
+            <div class="loader"></div>
+        </div>
+    </div>
+    
+    <!-- 登录失败提示 -->
+    <div id="error-modal" class="modal">
+        <div class="modal-content">
+            <div class="error-icon">
+                <i class="fas fa-exclamation-circle"></i>
+            </div>
+            <h3>登录失败</h3>
+            <p id="error-msg">工号或密码错误</p>
+            <button class="btn confirm-btn" id="close-error-btn">确定</button>
+        </div>
+    </div>
+
+<script>
+    // DOM元素
+    const loginForm = document.getElementById('login-form');
+    const workerCodeInput = document.getElementById('worker-code');
+    const passwordInput = document.getElementById('password');
+    const togglePasswordBtn = document.getElementById('toggle-password');
+    const successModal = document.getElementById('success-modal');
+    const errorModal = document.getElementById('error-modal');
+    const errorMsg = document.getElementById('error-msg');
+    const closeErrorBtn = document.getElementById('close-error-btn');
+
+    // 页面加载初始化
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('登录页面初始化');
+        initEventListeners();
+        
+        // 检查是否已登录
+        Common.checkLoginStatus().then(isLoggedIn => {
+            if (isLoggedIn) {
+                console.log('检测到有效的登录状态，正在跳转...');
+                showSuccess();
+                setTimeout(() => {
+                    window.location.href = 'woker.html';
+                }, 1500);
+            }
+        });
+    });
+
+    // 初始化事件监听
+    function initEventListeners() {
+        // 显示/隐藏密码
+        togglePasswordBtn.addEventListener('click', function() {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            this.innerHTML = type === 'password' ? '<i class="fas fa-eye"></i>' : '<i class="fas fa-eye-slash"></i>';
+        });
+        
+        // 表单提交
+        loginForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            handleLogin();
+        });
+        
+        // 关闭错误模态框
+        if (closeErrorBtn) {
+            closeErrorBtn.addEventListener('click', function() {
+                document.getElementById('error-modal').style.display = 'none';
+            });
+        }
+        
+        // 点击模态框外部关闭模态框
+        window.addEventListener('click', function(event) {
+            if (event.target === errorModal) {
+                errorModal.style.display = 'none';
+            }
+            if (event.target === successModal) {
+                successModal.style.display = 'none';
+            }
+        });
+        
+        // 回车键提交表单
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && (workerCodeInput === document.activeElement || passwordInput === document.activeElement)) {
+                loginForm.dispatchEvent(new Event('submit'));
+            }
+        });
+    }
+
+    // 处理登录
+    async function handleLogin() {
+        const workerCode = workerCodeInput.value.trim();
+        const password = passwordInput.value;
+        
+        // 验证输入
+        if (!workerCode) {
+            showError('请输入工号');
+            workerCodeInput.focus();
+            return;
+        }
+        
+        if (!password) {
+            showError('请输入密码');
+            passwordInput.focus();
+            return;
+        }
+        
+        // 禁用登录按钮防止重复提交
+        const loginBtn = document.querySelector('.login-btn');
+        const originalBtnText = loginBtn.innerHTML;
+        loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 登录中...';
+        loginBtn.disabled = true;
+        
+        try {
+            // 使用 Common.request (就是 axios) 发送登录请求
+            const response = await Common.request.post('/worker/login', {
+                workerCode: workerCode,
+                password: password
+            });
+            
+            const data = response.data;
+            
+            // 根据后端返回的code值判断登录结果
+            if (data.code === 1) {
+                // 登录成功，使用 Common.handleLoginSuccess 处理
+                const token = data.data; // 假设后端返回的 token 在 data.data 中
+                
+                if (Common.handleLoginSuccess(token)) {
+                    // 显示成功提示
+                    showSuccess();
+                } else {
+                    showError('登录失败，token 无效');
+                    loginBtn.innerHTML = originalBtnText;
+                    loginBtn.disabled = false;
+                }
+            } else {
+                // 登录失败，显示错误信息
+                showError(data.msg || '登录失败，请检查工号和密码');
+                // 恢复登录按钮
+                loginBtn.innerHTML = originalBtnText;
+                loginBtn.disabled = false;
+            }
+        } catch (error) {
+            console.error('登录请求失败:', error);
+            
+            // 根据错误类型显示不同的错误信息
+            let errorMessage = '网络错误，请稍后重试';
+            
+            if (error.response) {
+                // 服务器返回了错误状态码
+                if (error.response.status === 401) {
+                    errorMessage = '工号或密码错误';
+                } else if (error.response.status === 404) {
+                    errorMessage = '服务器未找到，请联系管理员';
+                } else if (error.response.status >= 500) {
+                    errorMessage = '服务器错误，请稍后重试';
+                } else if (error.response.data && error.response.data.msg) {
+                    errorMessage = error.response.data.msg;
+                }
+            } else if (error.request) {
+                // 请求已发送但没有收到响应
+                errorMessage = '网络连接失败，请检查网络';
+            }
+            
+            showError(errorMessage);
+            
+            // 恢复登录按钮
+            loginBtn.innerHTML = originalBtnText;
+            loginBtn.disabled = false;
+        }
+    }
+
+    // 显示成功提示
+    function showSuccess() {
+        successModal.style.display = 'flex';
+    }
+
+    // 显示错误提示
+    function showError(message) {
+        if (errorModal && errorMsg) {
+            errorMsg.textContent = message;
+            errorModal.style.display = 'flex';
+            
+            // 添加错误动画效果
+            workerCodeInput.style.animation = 'shake 0.5s';
+            passwordInput.style.animation = 'shake 0.5s';
+            
+            setTimeout(() => {
+                workerCodeInput.style.animation = '';
+                passwordInput.style.animation = '';
+            }, 500);
+        }
+    }
+
+    // 添加错误动画样式
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+    `;
+    document.head.appendChild(style);
+</script>
+</body>
+</html>
